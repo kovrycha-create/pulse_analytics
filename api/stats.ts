@@ -22,7 +22,10 @@ async function upstashLrange(key: string, start = 0, stop = -1) {
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${UPSTASH_TOKEN}` },
     body: JSON.stringify(body)
   });
-  if (!res.ok) throw new Error('upstash lrange failed ' + res.status);
+  if (!res.ok) {
+    const txt = await res.text().catch(() => '<no-body>');
+    throw new Error('upstash lrange failed ' + res.status + ' ' + txt);
+  }
   return res.json();
 }
 
