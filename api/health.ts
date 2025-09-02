@@ -24,28 +24,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.status(200).json({ ok: true });
     return;
   }
-
-  // Full health response
-  const data = {
-    ok: true,
-    version: process.env.VERCEL_GIT_COMMIT_SHA || 'unknown',
-    timestamp: new Date().toISOString()
-  };
-
-  res.status(200).json(data);
-  
+  // Full health response (single, consistent response)
   try {
     // In a real app, you might want to check database connectivity here
-    // For now, we'll just return a basic health check
-    return res.status(200).json({ 
+    const version =
+      process.env.VERCEL_GIT_COMMIT_SHA ||
+      process.env.VERCEL_GITHUB_COMMIT_SHA ||
+      process.env.GITHUB_SHA ||
+      'unknown';
+
+    return res.status(200).json({
       ok: true,
       timestamp: new Date().toISOString(),
-      version: process.env.VERCEL_GIT_COMMIT_SHA || 'development'
+      version
     });
   } catch (error) {
-    return res.status(500).json({ 
-      ok: false, 
-      error: 'Health check failed',
+    return res.status(500).json({
+      ok: false,
+      error: (error && (error as Error).message) || 'Health check failed',
       timestamp: new Date().toISOString()
     });
   }
