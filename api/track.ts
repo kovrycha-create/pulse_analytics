@@ -41,14 +41,20 @@ const writeDatabase = async (data: PageView[]): Promise<void> => {
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Set CORS headers for all responses from this endpoint
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // CORS: echo back the request Origin and allow credentials.
+  // Browsers will reject Access-Control-Allow-Origin: '*' when credentials are included.
+  const requestOrigin = (req.headers.origin as string) || '';
+  const allowOrigin = requestOrigin || '*';
+  res.setHeader('Access-Control-Allow-Origin', allowOrigin);
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  // allow credentials (cookies) if the request includes them
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
 
   // Handle preflight OPTIONS request
   if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+    // 204 No Content is appropriate for preflight
+    return res.status(204).end();
   }
 
   if (req.method !== 'POST') {

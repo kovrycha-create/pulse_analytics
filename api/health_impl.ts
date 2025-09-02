@@ -26,11 +26,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ message: 'Method Not Allowed' });
   }
 
-  // CORS origin should be provided via env to avoid hardcoding.
-  const origin = process.env.DASHBOARD_ORIGIN || process.env.VITE_DASHBOARD_ORIGIN || '*';
+  // CORS: prefer env-configured origin, else echo request origin
+  const requestOrigin = (req.headers.origin as string) || '';
+  const envOrigin = process.env.DASHBOARD_ORIGIN || process.env.VITE_DASHBOARD_ORIGIN || '';
+  const allowOrigin = envOrigin || requestOrigin || '*';
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.setHeader('Cache-Control', 'no-store');
-  res.setHeader('Access-Control-Allow-Origin', origin);
+  res.setHeader('Access-Control-Allow-Origin', allowOrigin);
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
 
   const pingOnly = req.query.ping === '1' || req.query.ping === 'true';
 
