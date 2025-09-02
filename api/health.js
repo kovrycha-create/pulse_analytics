@@ -1,4 +1,4 @@
-module.exports = (req, res) => {
+export default function handler(req, res) {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -22,4 +22,4 @@ module.exports = (req, res) => {
 
   res.statusCode = 200;
   res.end(JSON.stringify(payload));
-};
+}
