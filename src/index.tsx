@@ -1,7 +1,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import { HealthProvider } from './hooks/useHealth';
 import './index.css';
+import { initTheme } from './theme';
+
+// initialize theme early
+try { initTheme(); } catch (e) { /* ignore */ }
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -11,6 +16,8 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <App />
+    <HealthProvider>
+      <App />
+    </HealthProvider>
   </React.StrictMode>
 );

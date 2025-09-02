@@ -1,13 +1,21 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { PageView, PageSummaryData } from './types';
 import PageSummary from './components/PageSummary';
+const StatusChip = React.lazy(() => import('./components/StatusChip'));
 import PageViewsTable from './components/PageViewsTable';
 import SetupGuide from './components/SetupGuide';
+import SessionList from './components/SessionList';
+import SessionFunnel from './components/SessionFunnel';
+import { applyTheme, getPreferredTheme, Theme } from './theme';
+
+// make sure the cyber css path is available via public/styles
 
 const App: React.FC = () => {
   const [views, setViews] = useState<PageView[]>([]);
+  const [sessionsData, setSessionsData] = useState<any | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [theme, setTheme] = useState<Theme>(() => getPreferredTheme());
 
   const fetchStats = useCallback(async () => {
     setLoading(true);
@@ -16,12 +24,24 @@ const App: React.FC = () => {
       if (!response.ok) {
         throw new Error('Failed to fetch stats');
       }
-      const data: PageView[] = await response.json();
+  const data: PageView[] = await response.json();
       // Sort by timestamp descending.
       // Fix: The subtraction operator cannot be applied to Date objects directly in TypeScript.
       // Use .getTime() to get the numeric value of the date for sorting.
       data.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
       setViews(data);
+      // fetch aggregated sessions
+      try {
+        const agg = await fetch('/api/stats?aggregate=true');
+        if (agg.ok) {
+          const parsed = await agg.json();
+          setSessionsData(parsed);
+        } else {
+          setSessionsData(null);
+        }
+      } catch (e) {
+        setSessionsData(null);
+      }
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
@@ -35,6 +55,10 @@ const App: React.FC = () => {
     fetchStats();
   }, [fetchStats]);
 
+  useEffect(() => {
+    try { applyTheme(theme); } catch (e) {}
+  }, [theme]);
+
   const pageSummary: PageSummaryData[] = useMemo(() => {
     const counts = views.reduce((acc, view) => {
       acc[view.page] = (acc[view.page] || 0) + 1;
@@ -47,12 +71,38 @@ const App: React.FC = () => {
   }, [views]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-4 sm:p-6 lg:p-8">
+  <div className="min-h-screen bg-background text-foreground p-4 sm:p-6 lg:p-8 cyber-content">
       <div className="max-w-7xl mx-auto">
         <header className="mb-8 flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Pulse Analytics</h1>
+            <h1 className="text-3xl font-bold tracking-tight cyber-heading">Pulse Analytics</h1>
             <p className="text-muted-foreground">A simple, self-hosted analytics dashboard.</p>
+          </div>
+          <div className="flex items-center space-x-4">
+            {/* Status chip shows backend health */}
+            {/* @ts-ignore - lazy import to avoid increasing bundle in this patch */}
+            <React.Suspense fallback={null}>
+              <StatusChip />
+            </React.Suspense>
+            <button
+              onClick={fetchStats}
+              disabled={loading}
+              className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {loading ? 'Refreshing...' : 'Refresh'}
+            </button>
+          </div>
+          <div className="flex items-center space-x-3">
+            <label className="text-sm text-muted-foreground">Theme:</label>
+            <select
+              aria-label="Theme"
+              value={theme}
+              onChange={(e) => setTheme(e.target.value as Theme)}
+              className="px-3 py-2 rounded-md"
+            >
+              <option value="classic">Classic</option>
+              <option value="cybertech">CyberTech</option>
+            </select>
           </div>
           <button
             onClick={fetchStats}
@@ -85,6 +135,12 @@ const App: React.FC = () => {
           ) : (
             <>
               <PageSummary data={pageSummary} totalViews={views.length} uniqueVisitors={new Set(views.map(v => v.userAgent)).size} />
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <SessionFunnel sessions={(sessionsData && sessionsData.sessions) || []} />
+                <div className="lg:col-span-2">
+                  <SessionList sessions={(sessionsData && sessionsData.sessions) || []} />
+                </div>
+              </div>
               <PageViewsTable views={views} />
             </>
           )}

@@ -7,6 +7,11 @@ export default {
   ],
   theme: {
     extend: {
+        fontFamily: {
+          sans: ["system-ui", "-apple-system", "Segoe UI", "Roboto", "Helvetica Neue", "Arial"],
+          display: ["Orbitron", "PrototypeLocal", "sans-serif"],
+          cyber: ["PrototypeLocal", "Orbitron", "sans-serif"],
+        },
         colors: {
           background: 'hsl(222.2 84% 4.9%)',
           foreground: 'hsl(210 40% 98%)',

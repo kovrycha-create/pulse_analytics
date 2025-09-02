@@ -1,3 +1,39 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Local Prototype font for UI */
+@font-face {
+	font-family: 'PrototypeLocal';
+	src: url('/fonts/Prototype.ttf') format('truetype');
+	font-weight: 100 900;
+	font-style: normal;
+	font-display: swap;
+}
+
+/* Default font variables (non-cybertheme = system fonts) */
+:root {
+	--font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+	--font-display: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+}
+
+/* CyberTech theme: override to use local Prototype and Orbitron */
+[data-theme="cybertech"] {
+	--font-sans: 'PrototypeLocal', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+	--font-display: 'Orbitron', 'PrototypeLocal', system-ui, -apple-system, 'Segoe UI', Roboto;
+}
+
+/* Apply base fonts (will change when data-theme toggles) */
+html, body {
+	font-family: var(--font-sans);
+}
+
+/* Major headers use Orbitron only when CyberTech theme is active */
+[data-theme="cybertech"] h1,
+[data-theme="cybertech"] h2,
+[data-theme="cybertech"] h3,
+[data-theme="cybertech"] h4,
+[data-theme="cybertech"] h5,
+[data-theme="cybertech"] h6 {
+	font-family: var(--font-display);
+}

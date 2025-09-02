@@ -51,6 +51,24 @@ Pulse Analytics is a lightweight, privacy-focused, and self-hostable pageview an
 
 Your dashboard will be available at `http://localhost:3000`.
 
+## Health check / Live Status configuration
+
+The Live Status chip reads the API base URL from `VITE_API_BASE` at build time. If you need to set the API base at runtime (for example when serving static assets from a different origin), set a global before your app mounts:
+
+```html
+<script>
+    window.__VITE_API_BASE = 'https://your.api.base';
+</script>
+```
+
+Alternatively, set `VITE_API_BASE` in your `.env` file prior to building:
+
+```
+VITE_API_BASE=https://your.api.base
+```
+
+The backend exposes `/api/health` and `/api/health/ok`.
+
 ---
 
 ## Deployment to Vercel
@@ -94,3 +112,13 @@ After deploying, you need to add the tracker script to the website(s) you want t
     ```
 
 That's it! The script will now track pageviews on your site, and you can view the stats on your Pulse Analytics dashboard.
+
+## CyberTech theme
+
+The CyberTech theme is an optional neon-clean skin that can be enabled from the dashboard header.
+
+- Open the dashboard and use the Theme selector in the header to switch between Classic and CyberTech.
+- The selection is persisted to localStorage and respects your OS dark-mode preference by default.
+- All CyberTech styles live under `public/styles/theme.cybertech.css` and tokens are in `styles/tokens.cybertech.css`.
+
+If you prefer the classic UI, select "Classic" in the header; to experience the neon CyberTech skin, select "CyberTech".

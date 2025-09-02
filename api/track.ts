@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { promises as fs } from 'fs';
 import path from 'path';
 import crypto from 'crypto';
-import { PageView } from '../types';
+import { PageView } from '../src/types';
 
 // Fix: Use the /tmp directory for storage, as it's the only writable location in a Vercel serverless environment.
 // This also resolves the TypeScript error 'Property 'cwd' does not exist on type 'Process''.
@@ -55,20 +55,38 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { page, referrer, userAgent, timestamp } = req.body;
+    const payload = req.body || {};
 
-    if (!page || !userAgent || !timestamp) {
+    // basic validation
+    if (!payload.page || !payload.userAgent || !payload.timestamp) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
+    // get remote IP (best-effort)
+    const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '') as string;
+
+    // session id: hash of ip + ua, but include time proximity handling on read-side
+    const sessionBase = `${ip}|${payload.userAgent}`;
+    const sessionId = crypto.createHash('sha1').update(sessionBase).digest('hex');
+
     const newView: PageView = {
       id: crypto.randomUUID(),
-      page,
-      referrer: referrer || '',
-      userAgent,
-      timestamp,
+      page: payload.page,
+      referrer: payload.referrer || '',
+      userAgent: payload.userAgent,
+      timestamp: payload.timestamp,
+      type: payload.type,
+      screen: payload.screen,
+      viewport: payload.viewport,
+      deviceType: payload.deviceType,
+      performance: payload.performance,
+      timeOnPage: payload.timeOnPage,
+      scrollDepth: payload.scrollDepth,
+      eventName: payload.eventName,
+      properties: payload.properties,
+      sessionId
     };
-    
+
     await ensureDirectoryExists();
     const db = await readDatabase();
     db.push(newView);
@@ -80,7 +98,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.error('Tracking Error:', error);
     let message = 'Internal Server Error';
     if (error instanceof Error) {
-        message = error.message;
+      message = error.message;
     }
     return res.status(500).json({ message });
   }

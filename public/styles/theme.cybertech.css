@@ -1,0 +1,395 @@
+/* Combined CyberTech theme (tokens + theme) - public copy */
+:root{
+	--radius: 14px;
+	--radius-sm: 10px;
+	--radius-lg: 22px;
+	--shadow-0: 0 0 0 1px rgba(255,255,255,.04);
+	--shadow-1: 0 0 0 1px var(--border), 0 8px 30px rgba(0,0,0,.45);
+	--shadow-glow: 0 0 24px var(--primary-8);
+}
+
+/* Global fallbacks: ensure overlays render even if [data-theme] selectors
+   are not matching due to runtime or hosting differences. These are
+   intentionally redundant with the attribute-scoped rules below. */
+.cyber-bg-hex {
+	position: fixed;
+	inset: 0;
+	background-image: url('/img/hex-grid.svg');
+	background-repeat: repeat;
+	background-size: 80px 80px;
+	background-position: 0 0;
+	pointer-events: none;
+	opacity: .22;
+	mix-blend-mode: overlay;
+	transform: translateZ(0);
+	z-index: 9998;
+	will-change: transform, opacity, background-position;
+	animation: hex-drift 36s linear infinite;
+}
+
+.cyber-sheen {
+	position: fixed;
+	inset: 0;
+	background-image: linear-gradient(transparent 96%, rgba(255,255,255,.045) 100%);
+	background-size: 100% 32px;
+	background-position: 0 0;
+	mix-blend-mode: overlay;
+	pointer-events: none;
+	z-index: 9999;
+	opacity: .95;
+	animation: sheen-move 6s linear infinite;
+}
+
+.cyber-glow {
+	position: fixed;
+	pointer-events: none;
+	inset: 0;
+	z-index: 9997;
+}
+
+/* Support a top-level portal created at runtime to avoid stacking context issues */
+#cyber-portal, #cyber-portal > * {
+	position: fixed !important;
+	inset: 0 !important;
+	pointer-events: none !important;
+	z-index: 2147483647 !important;
+	transform: none !important;
+}
+
+/* layered hex grids for stronger cyber/hex aesthetic */
+.cyber-hex-mid {
+	position: fixed;
+	inset: 0;
+	background-image: url('/img/hex-grid.svg');
+	background-repeat: repeat;
+	background-size: 120px 120px;
+	background-position: 0 0;
+	pointer-events: none;
+	opacity: .14;
+	mix-blend-mode: overlay;
+	z-index: 2147483646;
+	animation: hex-parallax-slow 46s linear infinite;
+}
+
+.cyber-hex-fore {
+	position: fixed;
+	inset: 0;
+	background-image: url('/img/hex-grid.svg');
+	background-repeat: repeat;
+	background-size: 56px 56px;
+	background-position: 0 0;
+	pointer-events: none;
+	opacity: .08;
+	mix-blend-mode: overlay;
+	z-index: 2147483647;
+	animation: hex-parallax-fast 28s linear infinite;
+}
+
+/* glow pulse */
+.cyber-glow > div { animation: glow-pulse 7s ease-in-out infinite; }
+
+@keyframes hex-parallax-slow { 0% { transform: translate3d(0,0,0); background-position: 0 0; } 50% { transform: translate3d(-8px,4px,0); background-position: -60px 30px; } 100% { transform: translate3d(0,0,0); background-position: 0 0; } }
+@keyframes hex-parallax-fast { 0% { transform: translate3d(0,0,0); background-position: 0 0; } 50% { transform: translate3d(-24px,12px,0); background-position: -160px 80px; } 100% { transform: translate3d(0,0,0); background-position: 0 0; } }
+@keyframes glow-pulse { 0% { opacity: .22; filter: blur(36px); } 50% { opacity: .42; filter: blur(20px); } 100% { opacity: .22; filter: blur(36px); } }
+
+.cyber-glow::before,
+.cyber-glow::after {
+	content: '';
+	position: absolute;
+	width: 50%;
+	height: 50%;
+	filter: blur(40px);
+	opacity: .28;
+	mix-blend-mode: screen;
+}
+
+
+[data-theme="cybertech"]{
+	--bg-0:#0B0F14;
+	--bg-1:#121A22;
+	--bg-2:#17212B;
+	--border:#233143;
+	--text-0:#E6EEF6;
+	--text-1:#A8B7C6;
+
+	--primary:#00ADB5;
+	--primary-8:rgba(0,173,181,.55);
+	--blue:#4EA3FF;
+	--purple:#8A5CF6;
+	--orange:#FF6A00;
+	--success:#00D084;
+	--warning:#FFB020;
+	--danger:#FF3B3B;
+
+	--chip-online:#24D27E;
+	--chip-offline:#FF4D4D;
+
+	/* semantic mappings for existing tailwind-like classes used in app */
+	--background: linear-gradient(180deg,var(--bg-0),var(--bg-1));
+	--card-bg: color-mix(in srgb, var(--bg-2) 92%, #FFFFFF 8%);
+	--muted: var(--text-1);
+	--foreground: var(--text-0);
+}
+
+/* Map common tailwind semantic classes used in app to cyber variables */
+[data-theme="cybertech"] .bg-background { background: var(--background) !important; }
+[data-theme="cybertech"] .text-foreground { color: var(--foreground) !important; }
+[data-theme="cybertech"] .text-muted-foreground { color: var(--muted) !important; }
+[data-theme="cybertech"] .bg-secondary { background: var(--bg-2) !important; }
+[data-theme="cybertech"] .text-secondary-foreground { color: var(--foreground) !important; }
+[data-theme="cybertech"] .border-border { border-color: var(--border) !important; }
+[data-theme="cybertech"] .bg-primary { background: var(--primary) !important; }
+[data-theme="cybertech"] .text-primary-foreground { color: #061014 !important; }
+[data-theme="cybertech"] .bg-accent { background: rgba(255,255,255,0.02) !important; }
+[data-theme="cybertech"] .text-muted-foreground { color: var(--muted) !important; }
+
+
+/* global surface/backdrop */
+[data-theme="cybertech"]:root,
+[data-theme="cybertech"] html, [data-theme="cybertech"] body {
+	background: var(--background);
+	color: var(--foreground);
+}
+
+[data-theme="cybertech"] body::before {
+	content: '';
+	position: fixed;
+	inset: 0;
+	pointer-events: none;
+	background-image: radial-gradient(ellipse at 10% 10%, rgba(255,255,255,.06) 0%, transparent 20%), radial-gradient(ellipse at 90% 90%, rgba(255,255,255,.04) 0%, transparent 18%);
+	mix-blend-mode: overlay;
+	z-index: 0;
+}
+
+/* hex grid overlay using svg data uri mask */
+[data-theme="cybertech"] .cyber-bg-hex {
+	position: fixed;
+	inset: 0;
+	/* Use a repeating SVG so it tiles reliably across browsers */
+	background-image: url('/img/hex-grid.svg');
+	background-repeat: repeat;
+	background-size: 140px 140px;
+	background-position: 0 0;
+	pointer-events: none;
+	opacity: .06; /* subtle but visible */
+	mix-blend-mode: overlay;
+	transform: translateZ(0);
+	z-index: 0;
+	will-change: transform, opacity, background-position;
+	animation: hex-drift 40s linear infinite;
+}
+[data-theme="cybertech"] .cyber-bg-hex {
+	position: fixed;
+	inset: 0;
+	/* Use a repeating SVG so it tiles reliably across browsers */
+	background-image: url('/img/hex-grid.svg');
+	background-repeat: repeat;
+	/* smaller tiles make the grid more legible at large widths */
+	background-size: 80px 80px;
+	background-position: 0 0;
+	pointer-events: none;
+		opacity: .22; /* stronger, still subtle */
+		mix-blend-mode: overlay;
+		transform: translateZ(0);
+		z-index: 9998; /* render above main content */
+	will-change: transform, opacity, background-position;
+	animation: hex-drift 36s linear infinite;
+}
+
+/* scanline sheen */
+[data-theme="cybertech"] .cyber-sheen {
+	position: fixed;
+	inset: 0;
+	/* moving micro-sheen / scanlines */
+	background-image: linear-gradient(transparent 96%, rgba(255,255,255,.03) 100%);
+	background-size: 100% 48px;
+	background-position: 0 0;
+	mix-blend-mode: overlay;
+	pointer-events: none;
+	z-index: 1;
+	opacity: .6;
+	animation: sheen-move 8s linear infinite;
+}
+[data-theme="cybertech"] .cyber-sheen {
+	position: fixed;
+	inset: 0;
+	/* moving micro-sheen / scanlines */
+	background-image: linear-gradient(transparent 96%, rgba(255,255,255,.045) 100%);
+	background-size: 100% 32px;
+	background-position: 0 0;
+	mix-blend-mode: overlay;
+	pointer-events: none;
+	z-index: 1;
+		opacity: .95; /* more visible */
+		animation: sheen-move 6s linear infinite;
+		z-index: 9999; /* sheen should be top-most */
+}
+
+/* subtle holographic glow accents */
+[data-theme="cybertech"] .cyber-glow {
+	position: fixed;
+	pointer-events: none;
+	inset: 0;
+	z-index: 9997;
+}
+
+[data-theme="cybertech"] .cyber-glow::before,
+[data-theme="cybertech"] .cyber-glow::after {
+	content: '';
+	position: absolute;
+	width: 50%;
+	height: 50%;
+	filter: blur(60px);
+	opacity: .12;
+	mix-blend-mode: screen;
+}
+[data-theme="cybertech"] .cyber-glow::before,
+[data-theme="cybertech"] .cyber-glow::after {
+	content: '';
+	position: absolute;
+	width: 50%;
+	height: 50%;
+	filter: blur(40px);
+	opacity: .28;
+	mix-blend-mode: screen;
+}
+[data-theme="cybertech"] .cyber-glow::before {
+	left: -6%;
+	top: -6%;
+	background: radial-gradient(circle at 20% 20%, var(--primary-8), transparent 40%);
+	transform: translateZ(0) scale(1);
+}
+[data-theme="cybertech"] .cyber-glow::after {
+	right: -6%;
+	bottom: -6%;
+	background: radial-gradient(circle at 80% 80%, rgba(138,92,246,0.32), transparent 35%);
+}
+
+[data-theme="cybertech"] .cyber-glow::before {
+	left: -10%;
+	top: -10%;
+	background: radial-gradient(circle at 20% 20%, var(--primary-8), transparent 40%);
+	transform: translateZ(0) scale(1);
+}
+
+[data-theme="cybertech"] .cyber-glow::after {
+	right: -10%;
+	bottom: -8%;
+	background: radial-gradient(circle at 80% 80%, rgba(138,92,246,0.28), transparent 35%);
+}
+
+/* content area sits above overlays */
+[data-theme="cybertech"] .cyber-content {
+	position: relative;
+	z-index: 5;
+}
+
+/* Cards */
+[data-theme="cybertech"] .card {
+	background: var(--card-bg);
+	border: 1px solid var(--border);
+	box-shadow: var(--shadow-1);
+	border-radius: var(--radius);
+	padding: 1rem;
+	transition: transform .18s ease, box-shadow .18s ease;
+}
+
+[data-theme="cybertech"] .card:hover {
+	transform: translateY(-2px);
+	box-shadow: var(--shadow-1), 0 0 0 1px var(--primary-8), 0 0 18px var(--primary-8);
+}
+
+/* Headings gradient */
+[data-theme="cybertech"] .cyber-heading {
+	background: linear-gradient(90deg,var(--primary),var(--blue));
+	-webkit-background-clip: text;
+	background-clip: text;
+	color: transparent;
+}
+
+/* Buttons */
+[data-theme="cybertech"] .btn-primary {
+	background: var(--primary);
+	color: #061014;
+	box-shadow: 0 6px 18px rgba(0,173,181,.12);
+	border-radius: 10px;
+	transition: transform .09s ease, box-shadow .12s ease;
+}
+
+[data-theme="cybertech"] .btn-primary:hover, [data-theme="cybertech"] .btn-primary:focus {
+	transform: scale(1.02);
+	box-shadow: 0 10px 30px var(--primary-8);
+}
+
+[data-theme="cybertech"] .btn-ghost {
+	background: transparent;
+	border: 1px solid var(--border);
+	color: var(--foreground);
+	border-radius: 10px;
+}
+
+[data-theme="cybertech"] input, [data-theme="cybertech"] textarea, [data-theme="cybertech"] select {
+	background: rgba(255,255,255,.02);
+	backdrop-filter: blur(6px);
+	border: 1px solid rgba(255,255,255,.03);
+	color: var(--foreground);
+	border-radius: var(--radius-sm);
+	padding: .5rem .75rem;
+}
+
+/* Status chip */
+[data-theme="cybertech"] .status-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: .5rem;
+	padding: .375rem .75rem;
+	border-radius: 999px;
+	color: #061014;
+	position: relative;
+}
+
+[data-theme="cybertech"] .status-chip .dot {
+	width: 10px;
+	height: 10px;
+	border-radius: 999px;
+	box-shadow: 0 0 0 4px rgba(0,0,0,0.04) inset;
+}
+
+/* pulsating ring */
+@keyframes cyber-pulse {
+	0% { box-shadow: 0 0 0 0 rgba(0,0,0,0); }
+	70% { box-shadow: 0 0 18px 8px rgba(0,173,181,0.06); }
+	100% { box-shadow: 0 0 0 0 rgba(0,173,181,0); }
+}
+
+@keyframes hex-drift {
+	0% { transform: translate3d(0,0,0) rotate(0deg); background-position: 0 0; }
+	50% { transform: translate3d(-12px,6px,0) rotate(180deg); background-position: -80px 40px; }
+	100% { transform: translate3d(0,0,0) rotate(360deg); background-position: 0 0; }
+}
+
+@keyframes sheen-move {
+	0% { background-position: 0 0; }
+	100% { background-position: 0 48px; }
+}
+
+[data-theme="cybertech"] .status-online { background: var(--chip-online); color: #021006; }
+[data-theme="cybertech"] .status-online .dot { animation: cyber-pulse 2s infinite; }
+
+[data-theme="cybertech"] .status-offline { background: var(--chip-offline); color: #fff; }
+[data-theme="cybertech"] .status-offline .dot { animation: cyber-pulse 1.2s infinite; }
+
+[data-theme="cybertech"] .status-degraded { background: var(--warning); color: #061014; border-style: dashed; }
+
+/* Tables */
+[data-theme="cybertech"] table { border-collapse: collapse; width: 100%; }
+[data-theme="cybertech"] thead { position: sticky; top: 0; backdrop-filter: blur(6px); background: rgba(23,33,43,.6); }
+[data-theme="cybertech"] tbody tr:nth-child(even) { background: rgba(255,255,255,.01); }
+[data-theme="cybertech"] tbody tr:hover { box-shadow: inset 4px 0 0 var(--primary-8); }
+
+/* Tooltips / toasts / skeletons can be added progressively */
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+	[data-theme="cybertech"] * { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+}
