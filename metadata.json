@@ -1,0 +1,5 @@
+{
+  "name": "Pulse Analytics",
+  "description": "A lightweight, self-hostable pageview analytics system with a client-side tracker, a serverless backend for data collection, and a React-based dashboard for viewing statistics.",
+  "requestFramePermissions": []
+}
