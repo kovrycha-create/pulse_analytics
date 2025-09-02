@@ -17,7 +17,7 @@ const UPSTASH_KEY = process.env.UPSTASH_REDIS_KEY || 'pulse:events';
 async function upstashLpush(key: string, value: string) {
   if (!UPSTASH_URL || !UPSTASH_TOKEN) throw new Error('upstash not configured');
   const url = `${UPSTASH_URL}/commands`;
-  const body = { command: 'lpush', args: [key, value] };
+  const body = { command: ['LPUSH', key, value] };
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${UPSTASH_TOKEN}` },
@@ -33,7 +33,7 @@ async function upstashLpush(key: string, value: string) {
 async function upstashLtrim(key: string, start = 0, stop = 9999) {
   if (!UPSTASH_URL || !UPSTASH_TOKEN) throw new Error('upstash not configured');
   const url = `${UPSTASH_URL}/commands`;
-  const body = { command: 'ltrim', args: [key, String(start), String(stop)] };
+  const body = { command: ['LTRIM', key, String(start), String(stop)] };
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${UPSTASH_TOKEN}` },
