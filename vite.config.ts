@@ -5,11 +5,11 @@ import { fileURLToPath } from 'url';
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
+  base: '/',
   build: {
-    // use a different outDir to avoid permission issues on some filesystems
     outDir: "dist_build",
-    // reduce big single-chunk bundles by splitting vendor libraries
-    chunkSizeWarningLimit: 700,
+    assetsDir: "assets",
+    sourcemap: true,
     rollupOptions: {
       output: {
         manualChunks(id) {
