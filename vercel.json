@@ -1,1 +1,13 @@
-{}
+{
+	"builds": [
+		{
+			"src": "package.json",
+			"use": "@vercel/static-build",
+			"config": { "distDir": "dist_build" }
+		},
+		{
+			"src": "api/**/*.ts",
+			"use": "@vercel/node"
+		}
+	]
+}
