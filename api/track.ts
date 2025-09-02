@@ -9,6 +9,37 @@ type PageView = any;
 // This also resolves the TypeScript error 'Property 'cwd' does not exist on type 'Process''.
 const DB_PATH = path.join('/tmp', 'data', 'db.json');
 
+// Upstash config from env
+const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL || process.env.UPSTASH_REDIS_REST_URL?.trim();
+const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN?.trim();
+const UPSTASH_KEY = process.env.UPSTASH_REDIS_KEY || 'pulse:events';
+
+async function upstashLpush(key: string, value: string) {
+  if (!UPSTASH_URL || !UPSTASH_TOKEN) throw new Error('upstash not configured');
+  const url = `${UPSTASH_URL}/commands`;
+  const body = { command: 'lpush', args: [key, value] };
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${UPSTASH_TOKEN}` },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) throw new Error('upstash lpush failed ' + res.status);
+  return res.json();
+}
+
+async function upstashLtrim(key: string, start = 0, stop = 9999) {
+  if (!UPSTASH_URL || !UPSTASH_TOKEN) throw new Error('upstash not configured');
+  const url = `${UPSTASH_URL}/commands`;
+  const body = { command: 'ltrim', args: [key, String(start), String(stop)] };
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${UPSTASH_TOKEN}` },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) throw new Error('upstash ltrim failed ' + res.status);
+  return res.json();
+}
+
 const ensureDirectoryExists = async () => {
   try {
     await fs.mkdir(path.dirname(DB_PATH), { recursive: true });
@@ -96,16 +127,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // Log incoming event for debugging in server logs
   console.log('Track incoming origin=', req.headers.origin || '', 'page=', newView.page, 'type=', newView.type);
+    // If Upstash is configured, try to push the event there (shared storage across instances)
+    const payloadStr = JSON.stringify(newView);
+    if (UPSTASH_URL && UPSTASH_TOKEN) {
+      try {
+        await upstashLpush(UPSTASH_KEY, payloadStr);
+        // keep list bounded
+        await upstashLtrim(UPSTASH_KEY, 0, 19999);
+        console.log('Track pushed to Upstash key=', UPSTASH_KEY);
+        return res.status(201).json({ message: 'Tracked successfully' });
+      } catch (err) {
+        console.error('Upstash write failed, falling back to /tmp:', err);
+        // continue to fallback write
+      }
+    }
 
-  await ensureDirectoryExists();
-  const db = await readDatabase();
-  db.push(newView);
-  await writeDatabase(db);
+    // Fallback: local /tmp storage (ephemeral)
+    await ensureDirectoryExists();
+    const db = await readDatabase();
+    db.push(newView);
+    await writeDatabase(db);
 
-  // Log resulting DB size to help detect ephemeral storage issues
-  console.log('Track wrote DB entries=', Array.isArray(db) ? db.length : 'unknown');
+    // Log resulting DB size to help detect ephemeral storage issues
+    console.log('Track wrote DB entries=', Array.isArray(db) ? db.length : 'unknown');
 
-  return res.status(201).json({ message: 'Tracked successfully' });
+    return res.status(201).json({ message: 'Tracked successfully' });
 
   } catch (error) {
     console.error('Tracking Error:', error);

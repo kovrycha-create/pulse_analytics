@@ -8,6 +8,24 @@ type PageView = any;
 // Use the same DB path as track
 const DB_PATH = path.join('/tmp', 'data', 'db.json');
 
+// Upstash config
+const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL || process.env.UPSTASH_REDIS_REST_URL?.trim();
+const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN?.trim();
+const UPSTASH_KEY = process.env.UPSTASH_REDIS_KEY || 'pulse:events';
+
+async function upstashLrange(key: string, start = 0, stop = -1) {
+  if (!UPSTASH_URL || !UPSTASH_TOKEN) throw new Error('upstash not configured');
+  const url = `${UPSTASH_URL}/commands`;
+  const body = { command: 'lrange', args: [key, String(start), String(stop)] };
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${UPSTASH_TOKEN}` },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) throw new Error('upstash lrange failed ' + res.status);
+  return res.json();
+}
+
 function aggregate(pageViews: PageView[]) {
   // Group by sessionId then split into sub-sessions by inactivity window
   const bySid: Record<string, PageView[]> = {};
@@ -115,43 +133,60 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     console.log('Stats request origin=', req.headers.origin || '', 'query=', req.query);
-    let data: string;
-    try {
-      data = await fs.readFile(DB_PATH, 'utf-8');
-    } catch (readErr: any) {
-      if (readErr && readErr.code === 'ENOENT') {
-        console.log('Stats: DB file not found at', DB_PATH);
+    let pageViews: PageView[] = [];
+
+    // Try Upstash first
+    if (UPSTASH_URL && UPSTASH_TOKEN) {
+      try {
+        const up = await upstashLrange(UPSTASH_KEY, 0, -1);
+        if (up && Array.isArray(up.result)) {
+          pageViews = up.result.map((s: string) => {
+            try { return JSON.parse(s); } catch(e) { return null; }
+          }).filter(Boolean);
+        }
+        console.log('Stats: read from Upstash entries=', pageViews.length);
+      } catch (upErr) {
+        console.error('Stats: Upstash read failed, falling back to /tmp', upErr);
+      }
+    }
+
+    // Fallback to /tmp if Upstash had no data
+    if (!pageViews || !pageViews.length) {
+      let data: string;
+      try {
+        data = await fs.readFile(DB_PATH, 'utf-8');
+      } catch (readErr: any) {
+        if (readErr && readErr.code === 'ENOENT') {
+          console.log('Stats: DB file not found at', DB_PATH);
+          if (req.query.aggregate === 'true') {
+            return res.status(200).json({ totalViews: 0, totalSessions: 0, pagesPerSession: 0, bounceRate: 0 });
+          }
+          return res.status(200).json([]);
+        }
+        console.error('Stats: error reading DB file', readErr);
+        return res.status(500).json({ message: 'Failed to retrieve stats' });
+      }
+
+      try {
+        pageViews = JSON.parse(data);
+      } catch (parseErr) {
+        console.error('Stats: JSON parse error for DB file, will return empty dataset', parseErr);
         if (req.query.aggregate === 'true') {
           return res.status(200).json({ totalViews: 0, totalSessions: 0, pagesPerSession: 0, bounceRate: 0 });
         }
         return res.status(200).json([]);
       }
-      console.error('Stats: error reading DB file', readErr);
-      return res.status(500).json({ message: 'Failed to retrieve stats' });
-    }
 
-    let pageViews: PageView[] = [];
-    try {
-      pageViews = JSON.parse(data);
-    } catch (parseErr) {
-      console.error('Stats: JSON parse error for DB file, will return empty dataset', parseErr);
-      // optionally return empty dataset instead of failing
-      if (req.query.aggregate === 'true') {
-        return res.status(200).json({ totalViews: 0, totalSessions: 0, pagesPerSession: 0, bounceRate: 0 });
+      try {
+        const stat = await fs.stat(DB_PATH);
+        console.log('Stats: DB file size=', stat.size, 'entries=', Array.isArray(pageViews) ? pageViews.length : 'unknown');
+        if (Array.isArray(pageViews) && pageViews.length) {
+          const last = pageViews[pageViews.length - 1];
+          console.log('Stats: last event ts=', last && last.timestamp, 'page=', last && last.page);
+        }
+      } catch (statErr) {
+        // ignore stat failures
       }
-      return res.status(200).json([]);
-    }
-
-    // Log DB diagnostics
-    try {
-      const stat = await fs.stat(DB_PATH);
-      console.log('Stats: DB file size=', stat.size, 'entries=', Array.isArray(pageViews) ? pageViews.length : 'unknown');
-      if (Array.isArray(pageViews) && pageViews.length) {
-        const last = pageViews[pageViews.length - 1];
-        console.log('Stats: last event ts=', last && last.timestamp, 'page=', last && last.page);
-      }
-    } catch (statErr) {
-      // ignore stat failures
     }
 
     // support ?aggregate=true
