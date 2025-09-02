@@ -1,7 +1,7 @@
 {
   "version": 2,
   "functions": {
-    "api/**/*.ts": { "memory": 128 }
+    "api/**/*.ts": {}
   },
   "routes": [
   { "src": "/api/(.*)", "dest": "/api/$1" },
