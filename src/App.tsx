@@ -13,9 +13,6 @@ import { applyTheme, getPreferredTheme, Theme } from './theme';
 const App: React.FC = () => {
   // resolve API base like other parts of the app (import.meta.env or runtime override)
   const resolveApiBase = () => {
-    const ime = (typeof (import.meta) !== 'undefined' ? (import.meta as any).env : {}) || {};
-    const buildVal = (ime && ime.VITE_API_BASE) ? String(ime.VITE_API_BASE) : '';
-    if (buildVal) return buildVal.replace(/\/$/, '');
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const runtime = (typeof window !== 'undefined' && (window as any).__VITE_API_BASE) ? String((window as any).__VITE_API_BASE) : '';
@@ -23,6 +20,10 @@ const App: React.FC = () => {
     } catch (e) {
       /* ignore */
     }
+
+    const ime = (typeof (import.meta) !== 'undefined' ? (import.meta as any).env : {}) || {};
+    const buildVal = (ime && ime.VITE_API_BASE) ? String(ime.VITE_API_BASE) : '';
+    if (buildVal) return buildVal.replace(/\/$/, '');
     return '';
   };
 

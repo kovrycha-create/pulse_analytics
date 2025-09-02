@@ -26,11 +26,9 @@ const HealthContext = createContext<HealthContextValue | undefined>(undefined);
 const readBase = () => {
   // Browser builds shouldn't reference `process`. Prefer import.meta.env at build time
   // and allow a runtime override on window.__VITE_API_BASE if present.
-  const ime = (typeof (import.meta) !== 'undefined' ? (import.meta as any).env : {}) || {};
-  const buildVal = (ime && ime.VITE_API_BASE) ? String(ime.VITE_API_BASE) : '';
-  if (buildVal) return buildVal.replace(/\/$/, '');
-
-  // runtime injection (optional) — set window.__VITE_API_BASE before app mounts if needed
+  // Prefer a runtime override set on window.__VITE_API_BASE. This allows deploying
+  // static assets that can be served from different origins and still target the API
+  // at runtime. If no runtime override is present, fall back to the build-time value.
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const runtime = (typeof window !== 'undefined' && (window as any).__VITE_API_BASE) ? String((window as any).__VITE_API_BASE) : '';
@@ -38,6 +36,10 @@ const readBase = () => {
   } catch (e) {
     /* ignore */
   }
+
+  const ime = (typeof (import.meta) !== 'undefined' ? (import.meta as any).env : {}) || {};
+  const buildVal = (ime && ime.VITE_API_BASE) ? String(ime.VITE_API_BASE) : '';
+  if (buildVal) return buildVal.replace(/\/$/, '');
 
   // If nothing provided, return empty string — caller will handle disabled checks gracefully.
   return '';
