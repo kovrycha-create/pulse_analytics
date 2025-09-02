@@ -1,7 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { promises as fs } from 'fs';
 import path from 'path';
-import { PageView } from '../src/types';
+// Avoid importing TypeScript-only modules at runtime inside serverless functions.
+// Use a local type alias for runtime compatibility.
+type PageView = any;
 
 // Use the same DB path as track
 const DB_PATH = path.join('/tmp', 'data', 'db.json');

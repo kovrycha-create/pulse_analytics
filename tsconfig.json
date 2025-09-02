@@ -24,10 +24,15 @@
     ]
   },
   "include": [
+    "src",
     "api",
     "components",
+    "hooks",
     "*.ts",
-    "*.tsx"
+    "*.tsx",
+    "tests",
+    "src/**/*.ts",
+    "src/**/*.tsx"
   ],
   "exclude": [
     "vite.config.ts",

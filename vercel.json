@@ -1,13 +1,23 @@
 {
-	"builds": [
-		{
-			"src": "package.json",
-			"use": "@vercel/static-build",
-			"config": { "distDir": "dist_build" }
-		},
-		{
-			"src": "api/**/*.ts",
-			"use": "@vercel/node"
-		}
-	]
+  "version": 2,
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ],
+  "functions": {
+    "api/**/*.ts": {
+      "runtime": "@vercel/node@18.x"
+    }
+  },
+  "build": {
+    "env": {
+      "VITE_API_BASE": "/api"
+    }
+  }
 }

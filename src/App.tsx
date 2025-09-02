@@ -11,6 +11,22 @@ import { applyTheme, getPreferredTheme, Theme } from './theme';
 // make sure the cyber css path is available via public/styles
 
 const App: React.FC = () => {
+  // resolve API base like other parts of the app (import.meta.env or runtime override)
+  const resolveApiBase = () => {
+    const ime = (typeof (import.meta) !== 'undefined' ? (import.meta as any).env : {}) || {};
+    const buildVal = (ime && ime.VITE_API_BASE) ? String(ime.VITE_API_BASE) : '';
+    if (buildVal) return buildVal.replace(/\/$/, '');
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const runtime = (typeof window !== 'undefined' && (window as any).__VITE_API_BASE) ? String((window as any).__VITE_API_BASE) : '';
+      if (runtime) return runtime.replace(/\/$/, '');
+    } catch (e) {
+      /* ignore */
+    }
+    return '';
+  };
+
+  const apiBase = resolveApiBase();
   const [views, setViews] = useState<PageView[]>([]);
   const [sessionsData, setSessionsData] = useState<any | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -20,11 +36,20 @@ const App: React.FC = () => {
   const fetchStats = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/stats');
+      const statsUrl = apiBase ? `${apiBase}/api/stats` : '/api/stats';
+      const response = await fetch(statsUrl);
       if (!response.ok) {
-        throw new Error('Failed to fetch stats');
+        // try to include a snippet if the server returned HTML/errors
+        let bodySnippet = '';
+        try { const t = await response.text(); bodySnippet = t.slice(0, 200); } catch {}
+        throw new Error(`Failed to fetch stats (${response.status}) ${bodySnippet ? `- ${bodySnippet}` : ''}`);
       }
-  const data: PageView[] = await response.json();
+      const ct = response.headers.get('content-type') || '';
+      if (!ct.includes('application/json')) {
+        const txt = await response.text();
+        throw new Error(`Non-JSON response (${response.status}) ${ct}: ${txt.slice(0,200)}`);
+      }
+      const data: PageView[] = await response.json();
       // Sort by timestamp descending.
       // Fix: The subtraction operator cannot be applied to Date objects directly in TypeScript.
       // Use .getTime() to get the numeric value of the date for sorting.
@@ -32,10 +57,16 @@ const App: React.FC = () => {
       setViews(data);
       // fetch aggregated sessions
       try {
-        const agg = await fetch('/api/stats?aggregate=true');
+        const aggUrl = apiBase ? `${apiBase}/api/stats?aggregate=true` : '/api/stats?aggregate=true';
+        const agg = await fetch(aggUrl);
         if (agg.ok) {
-          const parsed = await agg.json();
-          setSessionsData(parsed);
+          const ct2 = agg.headers.get('content-type') || '';
+          if (!ct2.includes('application/json')) {
+            setSessionsData(null);
+          } else {
+            const parsed = await agg.json();
+            setSessionsData(parsed);
+          }
         } else {
           setSessionsData(null);
         }

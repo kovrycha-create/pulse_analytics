@@ -1,15 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const SetupGuide: React.FC = () => {
     const [copied, setCopied] = useState(false);
-    const trackerUrl = `${window.location.origin}/tracker.js`;
+    const [trackerUrl, setTrackerUrl] = useState('/tracker.js');
+
+    useEffect(() => {
+        if (typeof window !== 'undefined' && window.location) {
+            setTrackerUrl(`${window.location.origin}/tracker.js`);
+        }
+    }, []);
+
     const scriptTag = `<script async defer src="${trackerUrl}"></script>`;
 
     const handleCopy = () => {
-        navigator.clipboard.writeText(scriptTag).then(() => {
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        });
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(scriptTag).then(() => {
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+            });
+        } else {
+            // Fallback for older browsers
+            const ta = document.createElement('textarea');
+            ta.value = scriptTag;
+            document.body.appendChild(ta);
+            ta.select();
+            try {
+                document.execCommand('copy');
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+            } catch (e) {
+                // ignore
+            }
+            document.body.removeChild(ta);
+        }
     };
 
     return (

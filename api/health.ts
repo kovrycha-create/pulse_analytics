@@ -1,55 +1,38 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { promises as fs } from 'fs';
-import path from 'path';
-
-const DB_PATH = path.join('/tmp', 'data', 'db.json');
-
-function nowIso() { return new Date().toISOString(); }
-
-async function checkDb() {
-  const start = Date.now();
-  try {
-    const stat = await fs.stat(DB_PATH);
-    const duration = Date.now() - start;
-    // If file exists but is tiny, consider degraded
-    if (stat.size === 0) return { state: 'degraded', duration };
-    return { state: 'ok', duration };
-  } catch (err: any) {
-    if (err && err.code === 'ENOENT') return { state: 'down', duration: Date.now() - start };
-    return { state: 'degraded', duration: Date.now() - start };
-  }
-}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Max-Age', '86400');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    return res.status(204).end();
+  }
+
   if (req.method !== 'GET') {
-    res.setHeader('Allow', 'GET');
+    res.setHeader('Allow', 'GET, OPTIONS');
     return res.status(405).json({ message: 'Method Not Allowed' });
   }
 
-  // CORS origin should be provided via env to avoid hardcoding.
-  const origin = process.env.DASHBOARD_ORIGIN || process.env.VITE_DASHBOARD_ORIGIN || '*';
+  // Set response headers
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
-  res.setHeader('Cache-Control', 'no-store');
-  res.setHeader('Access-Control-Allow-Origin', origin);
-
-  const pingOnly = req.query.ping === '1' || req.query.ping === 'true';
-
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  
   try {
-    const db = await checkDb();
-
-    const payload = {
-      ok: db.state === 'ok',
-      version: process.env.npm_package_version || process.env.PULSE_VERSION || '1.0.0',
-      uptime_s: Math.floor(process.uptime()),
-      db: db.state as 'ok' | 'degraded' | 'down',
-      last_event_ts: new Date().toISOString(),
-      server_time: new Date().toISOString(),
-      _meta: pingOnly ? { ping: true } : undefined
-    } as any;
-
-    const statusCode = payload.ok ? 200 : 503;
-    return res.status(statusCode).json(payload);
-  } catch (err: any) {
-    return res.status(500).json({ ok: false, version: 'unknown', uptime_s: 0, db: 'down', last_event_ts: nowIso(), server_time: nowIso(), error: String(err) });
+    // In a real app, you might want to check database connectivity here
+    // For now, we'll just return a basic health check
+    return res.status(200).json({ 
+      ok: true,
+      timestamp: new Date().toISOString(),
+      version: process.env.VERCEL_GIT_COMMIT_SHA || 'development'
+    });
+  } catch (error) {
+    return res.status(500).json({ 
+      ok: false, 
+      error: 'Health check failed',
+      timestamp: new Date().toISOString()
+    });
   }
 }

@@ -2,7 +2,8 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { promises as fs } from 'fs';
 import path from 'path';
 import crypto from 'crypto';
-import { PageView } from '../src/types';
+// Avoid runtime import of TypeScript-only modules in serverless environment.
+type PageView = any;
 
 // Fix: Use the /tmp directory for storage, as it's the only writable location in a Vercel serverless environment.
 // This also resolves the TypeScript error 'Property 'cwd' does not exist on type 'Process''.
