@@ -8,23 +8,23 @@
   <!-- Orbitron for major headers -->
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
 
-<script type="importmap">
-{
-  "imports": {
-    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^4.3.0",
-    "vite": "https://aistudiocdn.com/vite@^5.2.11",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^18.3.1/",
-    "crypto": "https://aistudiocdn.com/crypto@^1.0.1",
-    "fs": "https://aistudiocdn.com/fs@^0.0.1-security",
-    "react/": "https://aistudiocdn.com/react@^18.3.1/",
-    "react": "https://aistudiocdn.com/react@^18.3.1",
-    "recharts": "https://aistudiocdn.com/recharts@^2.12.7",
-    "path": "https://aistudiocdn.com/path@^0.12.7",
-    "@vercel/node": "https://aistudiocdn.com/@vercel/node@^3.1.5"
+  <script type="importmap">
+  {
+    "imports": {
+      "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^4.3.0",
+      "vite": "https://aistudiocdn.com/vite@^5.2.11",
+      "react-dom/": "https://aistudiocdn.com/react-dom@^18.3.1/",
+      "crypto": "https://aistudiocdn.com/crypto@^1.0.1",
+      "fs": "https://aistudiocdn.com/fs@^0.0.1-security",
+      "react/": "https://aistudiocdn.com/react@^18.3.1/",
+      "react": "https://aistudiocdn.com/react@^18.3.1",
+      "recharts": "https://aistudiocdn.com/recharts@^2.12.7",
+      "path": "https://aistudiocdn.com/path@^0.12.7",
+      "@vercel/node": "https://aistudiocdn.com/@vercel/node@^3.1.5"
+    }
   }
-}
-</script>
-  <script type="module" crossorigin src="/assets/index-xDDGBft9.js"></script>
+  </script>
+  <script type="module" crossorigin src="/assets/index-NbO_jbTP.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/vendor-CdMoegv2.js">
   <link rel="modulepreload" crossorigin href="/assets/vendor_react-Cb-iJF6D.js">
   <link rel="modulepreload" crossorigin href="/assets/vendor_recharts-DItNOE66.js">
@@ -32,5 +32,17 @@
 </head>
   <body class="bg-background text-foreground">
     <div id="root"></div>
+  <!-- Runtime API base default: allows runtime override via window.__VITE_API_BASE if needed. -->
+  <script>
+    // Ensure a runtime-first API base exists so the SPA doesn't bake a build-time VITE_API_BASE
+    // This prevents double-prefixing like /api/api/health when the app was built with a base.
+    try {
+      if (typeof window !== 'undefined' && typeof window.__VITE_API_BASE === 'undefined') {
+        window.__VITE_API_BASE = '';
+      }
+    } catch (e) {
+      // ignore
+    }
+  </script>
   </body>
 </html>

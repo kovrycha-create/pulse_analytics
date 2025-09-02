@@ -29,8 +29,14 @@
     <div id="root"></div>
   <!-- Runtime API base default: allows runtime override via window.__VITE_API_BASE if needed. -->
   <script>
-    if (typeof window !== 'undefined' && typeof window.__VITE_API_BASE === 'undefined') {
-      window.__VITE_API_BASE = '';
+    // Ensure a runtime-first API base exists so the SPA doesn't bake a build-time VITE_API_BASE
+    // This prevents double-prefixing like /api/api/health when the app was built with a base.
+    try {
+      if (typeof window !== 'undefined' && typeof window.__VITE_API_BASE === 'undefined') {
+        window.__VITE_API_BASE = '';
+      }
+    } catch (e) {
+      // ignore
     }
   </script>
   <script type="module" src="/src/index.tsx"></script>

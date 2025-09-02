@@ -3,8 +3,41 @@
 (function() {
   if (document.visibilityState === 'prerender') return;
 
-  const scriptUrl = new URL(document.currentScript.src);
-  const trackUrl = `${scriptUrl.origin}/api/track`;
+  // locate the running <script> element (works when bundled or inlined)
+  const scriptEl = document.currentScript || (function() {
+    const scripts = document.getElementsByTagName('script');
+    return scripts[scripts.length - 1];
+  })();
+
+  const scriptUrl = new URL((scriptEl && scriptEl.src) || location.href, location.href);
+
+  // Allow overriding the API/base URL from the script tag with either:
+  //  - <script src="/tracker.js" data-api-url="https://api.example.com/api/track"></script>
+  //  - <script src="https://.../tracker.js?api=https://api.example.com"></script>
+  //  - <script src="/tracker.js" data-base-url="https://api.example.com"></script>
+  const apiAttr = (scriptEl && scriptEl.getAttribute && (
+    scriptEl.getAttribute('data-api-url') ||
+    scriptEl.getAttribute('data-base-url') ||
+    scriptUrl.searchParams.get('api') ||
+    scriptUrl.searchParams.get('base')
+  )) || null;
+
+  let trackUrl;
+  if (apiAttr) {
+    try {
+      // resolve relative or absolute values against the script origin
+      const resolved = new URL(apiAttr, scriptUrl.origin);
+      if (resolved.pathname.endsWith('/api/track')) {
+        trackUrl = resolved.href;
+      } else {
+        trackUrl = `${resolved.origin}${resolved.pathname.replace(/\/$/, '')}/api/track`;
+      }
+    } catch (e) {
+      trackUrl = `${scriptUrl.origin}/api/track`;
+    }
+  } else {
+    trackUrl = `${scriptUrl.origin}/api/track`;
+  }
 
   const now = Date.now();
   const sessionWindowMs = 30 * 60 * 1000; // 30 minutes
