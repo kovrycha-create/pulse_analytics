@@ -10,9 +10,6 @@
       "dest": "/index.html"
     }
   ],
-  "functions": {
-  "api/**/*.ts": {}
-  },
   "build": {
     "env": {
       "VITE_API_BASE": "/api"
