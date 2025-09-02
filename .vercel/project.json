@@ -1,0 +1,16 @@
+{
+  "projectId": "prj_7mrNr9LhzmeeITdj7ofjjAVuX7XD",
+  "orgId": "team_2Htoq8pqL1AWp5NFPGPixuyY",
+  "projectName": "pulse-analytics",
+  "settings": {
+    "createdAt": 1756780360580,
+    "framework": null,
+    "devCommand": null,
+    "installCommand": null,
+    "buildCommand": null,
+    "outputDirectory": null,
+    "rootDirectory": null,
+    "directoryListing": false,
+    "nodeVersion": "22.x"
+  }
+}
