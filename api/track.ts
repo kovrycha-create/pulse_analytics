@@ -76,7 +76,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const sessionBase = `${ip}|${payload.userAgent}`;
     const sessionId = crypto.createHash('sha1').update(sessionBase).digest('hex');
 
-    const newView: PageView = {
+  const newView: PageView = {
       id: crypto.randomUUID(),
       page: payload.page,
       referrer: payload.referrer || '',
@@ -94,12 +94,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       sessionId
     };
 
-    await ensureDirectoryExists();
-    const db = await readDatabase();
-    db.push(newView);
-    await writeDatabase(db);
+  // Log incoming event for debugging in server logs
+  console.log('Track incoming origin=', req.headers.origin || '', 'page=', newView.page, 'type=', newView.type);
 
-    return res.status(201).json({ message: 'Tracked successfully' });
+  await ensureDirectoryExists();
+  const db = await readDatabase();
+  db.push(newView);
+  await writeDatabase(db);
+
+  // Log resulting DB size to help detect ephemeral storage issues
+  console.log('Track wrote DB entries=', Array.isArray(db) ? db.length : 'unknown');
+
+  return res.status(201).json({ message: 'Tracked successfully' });
 
   } catch (error) {
     console.error('Tracking Error:', error);

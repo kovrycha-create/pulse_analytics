@@ -114,8 +114,45 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const data = await fs.readFile(DB_PATH, 'utf-8');
-    const pageViews: PageView[] = JSON.parse(data);
+    console.log('Stats request origin=', req.headers.origin || '', 'query=', req.query);
+    let data: string;
+    try {
+      data = await fs.readFile(DB_PATH, 'utf-8');
+    } catch (readErr: any) {
+      if (readErr && readErr.code === 'ENOENT') {
+        console.log('Stats: DB file not found at', DB_PATH);
+        if (req.query.aggregate === 'true') {
+          return res.status(200).json({ totalViews: 0, totalSessions: 0, pagesPerSession: 0, bounceRate: 0 });
+        }
+        return res.status(200).json([]);
+      }
+      console.error('Stats: error reading DB file', readErr);
+      return res.status(500).json({ message: 'Failed to retrieve stats' });
+    }
+
+    let pageViews: PageView[] = [];
+    try {
+      pageViews = JSON.parse(data);
+    } catch (parseErr) {
+      console.error('Stats: JSON parse error for DB file, will return empty dataset', parseErr);
+      // optionally return empty dataset instead of failing
+      if (req.query.aggregate === 'true') {
+        return res.status(200).json({ totalViews: 0, totalSessions: 0, pagesPerSession: 0, bounceRate: 0 });
+      }
+      return res.status(200).json([]);
+    }
+
+    // Log DB diagnostics
+    try {
+      const stat = await fs.stat(DB_PATH);
+      console.log('Stats: DB file size=', stat.size, 'entries=', Array.isArray(pageViews) ? pageViews.length : 'unknown');
+      if (Array.isArray(pageViews) && pageViews.length) {
+        const last = pageViews[pageViews.length - 1];
+        console.log('Stats: last event ts=', last && last.timestamp, 'page=', last && last.page);
+      }
+    } catch (statErr) {
+      // ignore stat failures
+    }
 
     // support ?aggregate=true
     if (req.query.aggregate === 'true') {
