@@ -8,6 +8,19 @@ export default defineConfig({
   build: {
     // use a different outDir to avoid permission issues on some filesystems
     outDir: "dist_build",
+    // reduce big single-chunk bundles by splitting vendor libraries
+    chunkSizeWarningLimit: 700,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom')) return 'vendor_react';
+            if (id.includes('recharts')) return 'vendor_recharts';
+            return 'vendor';
+          }
+        }
+      }
+    },
   },
   server: {
     proxy: {
