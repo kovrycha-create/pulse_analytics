@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { promises as fs } from 'fs';
 import path from 'path';
 import crypto from 'crypto';
+import { Redis } from '@upstash/redis';
 // Avoid runtime import of TypeScript-only modules in serverless environment.
 type PageView = any;
 
@@ -14,7 +15,12 @@ const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL || process.env.UPSTASH_RE
 const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN?.trim();
 const UPSTASH_KEY = process.env.UPSTASH_REDIS_KEY || 'pulse:events';
 
+const upstashClient = (UPSTASH_URL && UPSTASH_TOKEN) ? new Redis({ url: UPSTASH_URL, token: UPSTASH_TOKEN }) : null;
+
 async function upstashLpush(key: string, value: string) {
+  if (upstashClient) {
+    return await upstashClient.lpush(key, value);
+  }
   if (!UPSTASH_URL || !UPSTASH_TOKEN) throw new Error('upstash not configured');
   const url = `${UPSTASH_URL}/commands`;
   const body = { command: ['LPUSH', key, value] };
@@ -31,6 +37,9 @@ async function upstashLpush(key: string, value: string) {
 }
 
 async function upstashLtrim(key: string, start = 0, stop = 9999) {
+  if (upstashClient) {
+    return await upstashClient.ltrim(key, start, stop);
+  }
   if (!UPSTASH_URL || !UPSTASH_TOKEN) throw new Error('upstash not configured');
   const url = `${UPSTASH_URL}/commands`;
   const body = { command: ['LTRIM', key, String(start), String(stop)] };

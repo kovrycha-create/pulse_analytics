@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { Redis } from '@upstash/redis';
 // Avoid importing TypeScript-only modules at runtime inside serverless functions.
 // Use a local type alias for runtime compatibility.
 type PageView = any;
@@ -13,7 +14,16 @@ const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL || process.env.UPSTASH_RE
 const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN?.trim();
 const UPSTASH_KEY = process.env.UPSTASH_REDIS_KEY || 'pulse:events';
 
+// Create an Upstash client when env is configured. The official client handles
+// compatibility differences and avoids issuing disabled commands like COMMANDS.
+const upstashClient = (UPSTASH_URL && UPSTASH_TOKEN) ? new Redis({ url: UPSTASH_URL, token: UPSTASH_TOKEN }) : null;
+
 async function upstashLrange(key: string, start = 0, stop = -1) {
+  if (upstashClient) {
+    // client.lrange returns an array directly
+    return await upstashClient.lrange(key, start, stop);
+  }
+
   if (!UPSTASH_URL || !UPSTASH_TOKEN) throw new Error('upstash not configured');
   const url = `${UPSTASH_URL}/commands`;
   const body = { command: ['LRANGE', key, String(start), String(stop)] };
