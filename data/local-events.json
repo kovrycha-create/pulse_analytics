@@ -1,0 +1,14 @@
+[
+  {
+    "userAgent": "pwsh-test2",
+    "timestamp": "2025-09-04T21:57:27.7851323-04:00",
+    "page": "/test-local2",
+    "type": "pageview"
+  },
+  {
+    "userAgent": "pwsh-test3",
+    "timestamp": "2025-09-04T22:00:34.8960562-04:00",
+    "page": "/test-local3",
+    "type": "pageview"
+  }
+]
