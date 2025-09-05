@@ -143,11 +143,10 @@ export const HealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // Polling with jitter and backoff
   useEffect(() => {
     let stopped = false;
-    if (!baseUrl) {
-      // No configured API base — remain offline but don't throw in browser
-      setState('offline');
-      return () => { stopped = true; };
-    }
+    // Allow empty string baseUrl which implies a relative same-origin API (e.g. '/api').
+    // Previously an early return here prevented checks when baseUrl was empty, forcing
+    // users to manually click "Retry now". Run checks regardless of whether baseUrl
+    // is empty so the app can connect automatically to a relative API path.
     const baseInterval = 15_000;
 
     const schedule = (delay: number) => {
