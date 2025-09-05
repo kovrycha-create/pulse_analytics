@@ -169,8 +169,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         if (entries && entries.length) {
-          pageViews = entries.map((s: string) => {
-            try { return JSON.parse(s); } catch(e) { return null; }
+          // entries may be JSON strings (what track writes) or already-parsed objects
+          pageViews = entries.map((s: any, i: number) => {
+            if (!s) return null;
+            if (typeof s === 'string') {
+              try { return JSON.parse(s); } catch (e) {
+                console.error('Stats: JSON.parse failed for entry index=', i, 'error=', e, 'raw=', s);
+                return null;
+              }
+            }
+            if (typeof s === 'object') return s;
+            try { return JSON.parse(String(s)); } catch (e) {
+              console.error('Stats: Unexpected entry type, index=', i, 'type=', typeof s);
+              return null;
+            }
           }).filter(Boolean);
         }
 

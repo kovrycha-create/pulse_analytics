@@ -3,8 +3,12 @@ import { useHealth } from '../hooks/useHealth';
 
 const SetupGuide: React.FC = () => {
     const [copied, setCopied] = useState(false);
-    const trackerUrl = '/tracker.js';
-    const scriptTag = `<script async defer src="${trackerUrl}"></script>`;
+    // Prefer using the deployed production host, but fall back to current origin in the browser
+    const defaultHost = 'https://pulse-analytics.vercel.app';
+    const host = (typeof window !== 'undefined' && (window as any).location && (window as any).location.origin) ? (window as any).location.origin : defaultHost;
+    const trackerUrl = `${host.replace(/\/$/, '')}/tracker.js`;
+    const apiUrl = `${host.replace(/\/$/, '')}/api/track`;
+    const scriptTag = `<script async defer src="${trackerUrl}" data-api-url="${apiUrl}"></script>`;
 
     const handleCopy = () => {
         navigator.clipboard.writeText(scriptTag).then(() => {
