@@ -30,6 +30,8 @@ const App: React.FC = () => {
   const apiBase = resolveApiBase();
   const [views, setViews] = useState<PageView[]>([]);
   const [sessionsData, setSessionsData] = useState<any | null>(null);
+  const [clearing, setClearing] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [theme, setTheme] = useState<Theme>(() => getPreferredTheme());
@@ -56,7 +58,7 @@ const App: React.FC = () => {
       // Use .getTime() to get the numeric value of the date for sorting.
       data.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
       setViews(data);
-      // fetch aggregated sessions
+  // fetch aggregated sessions
       try {
         const aggUrl = apiBase ? `${apiBase}/api/stats?aggregate=true` : '/api/stats?aggregate=true';
         const agg = await fetch(aggUrl);
@@ -123,6 +125,13 @@ const App: React.FC = () => {
             >
               {loading ? 'Refreshing...' : 'Refresh'}
             </button>
+            <button
+              onClick={() => setShowClearConfirm(true)}
+              disabled={loading || clearing}
+              className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {clearing ? 'Clearing...' : 'Clear'}
+            </button>
           </div>
           <div className="flex items-center space-x-3">
             <label className="text-sm text-muted-foreground">Theme:</label>
@@ -166,7 +175,7 @@ const App: React.FC = () => {
               </div>
           ) : (
             <>
-              <PageSummary data={pageSummary} totalViews={views.length} uniqueVisitors={new Set(views.map(v => v.userAgent)).size} />
+              <PageSummary data={pageSummary} totalViews={views.length} uniqueVisitors={new Set(views.map(v => v.userAgent)).size} views={views} />
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <SessionFunnel sessions={(sessionsData && sessionsData.sessions) || []} />
                 <div className="lg:col-span-2">
@@ -178,6 +187,39 @@ const App: React.FC = () => {
           )}
         </main>
       </div>
+      {showClearConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowClearConfirm(false)} />
+          <div className="relative bg-background p-6 rounded-md border border-border w-11/12 max-w-md">
+            <h3 className="text-lg font-semibold mb-2">Confirm Reset</h3>
+            <p className="text-muted-foreground mb-4">This will permanently delete collected analytics data (Upstash and local fallback). This action cannot be undone. Are you sure?</p>
+            <div className="flex justify-end space-x-3">
+              <button onClick={() => setShowClearConfirm(false)} className="px-3 py-2 rounded bg-secondary">Cancel</button>
+              <button
+                onClick={async () => {
+                  try {
+                    setClearing(true);
+                    const url = apiBase ? `${apiBase}/api/clear` : '/api/clear';
+                    const resp = await fetch(url, { method: 'POST' });
+                    if (!resp.ok) throw new Error('Failed to clear');
+                    setShowClearConfirm(false);
+                    // refresh stats after clearing
+                    await fetchStats();
+                  } catch (e) {
+                    // ignore — fetchStats will surface issues
+                    console.error(e);
+                  } finally {
+                    setClearing(false);
+                  }
+                }}
+                className="px-3 py-2 rounded bg-red-600 text-white"
+              >
+                Confirm Clear
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
