@@ -152,12 +152,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (UPSTASH_URL && UPSTASH_TOKEN) {
       try {
         const up = await upstashLrange(UPSTASH_KEY, 0, -1);
-        if (up && Array.isArray(up.result)) {
-          pageViews = up.result.map((s: string) => {
+
+        // Diagnostic: log low-volume info for Vercel logs
+        console.log('Stats: upstashLrange returned type=', Object.prototype.toString.call(up));
+
+        // up could be an array (client.lrange) or an object { result: [...] } (REST /commands)
+        let entries: string[] = [];
+        if (Array.isArray(up)) {
+          entries = up as string[];
+          console.log('Stats: using Upstash client result, entries count=', entries.length);
+        } else if (up && Array.isArray((up as any).result)) {
+          entries = (up as any).result as string[];
+          console.log('Stats: using Upstash REST result, entries count=', entries.length);
+        } else {
+          console.log('Stats: Upstash returned unexpected shape, falling back', up && typeof up);
+        }
+
+        if (entries && entries.length) {
+          pageViews = entries.map((s: string) => {
             try { return JSON.parse(s); } catch(e) { return null; }
           }).filter(Boolean);
         }
-        console.log('Stats: read from Upstash entries=', pageViews.length);
+
+        console.log('Stats: read from Upstash final entries=', pageViews.length);
       } catch (upErr) {
         console.error('Stats: Upstash read failed, falling back to /tmp', upErr);
       }

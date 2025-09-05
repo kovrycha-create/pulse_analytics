@@ -146,13 +146,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const payloadStr = JSON.stringify(newView);
     if (UPSTASH_URL && UPSTASH_TOKEN) {
       try {
-        await upstashLpush(UPSTASH_KEY, payloadStr);
-        // keep list bounded
-        await upstashLtrim(UPSTASH_KEY, 0, 19999);
-        console.log('Track pushed to Upstash key=', UPSTASH_KEY);
+  const resPush = await upstashLpush(UPSTASH_KEY, payloadStr);
+  // keep list bounded
+  const resTrim = await upstashLtrim(UPSTASH_KEY, 0, 19999);
+  console.log('Track: upstash push/trim results types=', Object.prototype.toString.call(resPush), Object.prototype.toString.call(resTrim));
+  console.log('Track pushed to Upstash key=', UPSTASH_KEY);
         return res.status(201).json({ message: 'Tracked successfully' });
       } catch (err) {
-        console.error('Upstash write failed, falling back to /tmp:', err);
+  console.error('Upstash write failed, falling back to /tmp:', err);
         // continue to fallback write
       }
     }
